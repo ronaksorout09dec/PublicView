@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduLearn - Online Courses</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <nav class="navbar">
+            <div class="logo">EduLearn</div>
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#courses">Courses</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h1>Learn Anything, Anytime</h1>
+            <p>Explore our wide range of courses and start your learning journey today!</p>
+            <button class="cta-button">Get Started</button>
+        </div>
+    </section>
+
+    <!-- Courses Section -->
+    <section id="courses" class="courses">
+        <h2>Our Courses</h2>
+        <div class="course-container" id="courseContainer">
+            <!-- Courses will be added dynamically via JavaScript -->
+        </div>
+    </section>
+
+    <!-- Course Details Section -->
+    <section id="course-details" class="course-details">
+        <div class="details-container">
+            <div class="video-preview">
+                <video controls>
+                    <source src="videoplayback.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            <div class="syllabus">
+                <h3 id="courseTitle">Select a Course</h3>
+                <div id="syllabusContent">
+                    <p>Click on a course to view its syllabus</p>
+                </div>
+                <button class="enroll-btn" id="enrollBtn">Enroll Now</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <p>&copy; 2025 EduLearn. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#">Facebook</a>
+                <a href="#">Twitter</a>
+                <a href="#">LinkedIn</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
