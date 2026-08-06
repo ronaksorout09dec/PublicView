@@ -1,0 +1,58 @@
+# Backend
+backend/target/
+backend/.mvn/
+backend/*.jar
+backend/*.log
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.env.local
+frontend/.env.production
+
+# Mock Backend
+mock-backend/node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.settings/
+.classpath
+.project
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Environment
+.env.local
+.env.production.local
+.env
+
+# Database
+*.db
+*.sqlite
+
+# Ollama models
+ollama_data/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Build
+build/
+out/
+
+# Keep educational website
+!educational\ website/
