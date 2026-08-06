@@ -10,6 +10,28 @@ const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen3:latest';
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 
+// Global error handler for invalid JSON, timeout, etc.
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    console.warn('[Error] Invalid JSON:', err.message);
+    return res.status(400).json({ success: false, message: 'Invalid JSON payload', error: err.message, timestamp: new Date().toISOString() });
+  }
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ success: false, message: 'Payload too large', error: err.message });
+  }
+  next(err);
+});
+
+// Input sanitization helper (mirrors Java Sanitizer + InputSanitizationFilter)
+function sanitize(input) {
+  if (input == null) return input;
+  return input.toString().replace(/<script.*?>.*?<\/script>/gi, '').replace(/javascript:/gi, '').trim();
+}
+function sanitizePhone(phone) {
+  if (phone == null) return phone;
+  return phone.toString().replace(/\D/g, '').trim();
+}
+
 // In-memory store (mirrors PostgreSQL Leads table)
 let leads = [];
 let leadIdCounter = 1;
@@ -119,6 +141,23 @@ function fallbackResponse(userMessage, session) {
   const lower = userMessage.toLowerCase();
   const size = session.messages.length;
   console.log(`[Fallback] Using rule-based response for: "${userMessage}" size ${size}`);
+
+  // Hallucination guard: unknown project details -> "I'll confirm with sales team"
+  const unknownPatterns = [
+    '1 bhk', '1bhk', '5 bhk', '5bhk', 'villa', 'plot', 'shop', 'office',
+    '50 lakhs', '50lakh', '60 lakhs', '2 crore', '3 crore',
+    'gurgaon', 'mumbai', 'bangalore', 'pune', 'delhi', 'faridabad',
+    'possession 2025', 'possession 2026', 'ready to move'
+  ];
+  for (const pat of unknownPatterns) {
+    if (lower.includes(pat)) {
+      // Check if it's truly unknown (not in PROJECT_INFO)
+      if (pat.includes('1 bhk') || pat.includes('50 lakhs') || pat.includes('villa') || pat.includes('plot') || pat.includes('gurgaon') || pat.includes('mumbai')) {
+        return "I'll confirm this with our sales team. Hamare project me 2 BHK ₹85 Lakhs, 3 BHK ₹1.2 Crore, aur 4 BHK ₹1.6 Crore available hai Sector 150 Noida me. Aapko inme se kaunsa pasand hai?";
+      }
+    }
+  }
+
   if (size <= 2) {
     return "Namaste! Main Priya bol rahi hu Sky Heights Residency se, Sector 150 Noida me. Hamara project Expressway aur Metro ke paas hai. Aap property buying ke liye dekh rahe hain ya investment ke liye?";
   }
@@ -183,10 +222,20 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
-// Leads CRUD
+// Leads CRUD - with sanitization (mirrors Java Sanitizer)
 app.post('/api/leads', (req, res) => {
-  const { customerName, phone, location, propertyType, configuration, budget, purpose, timeline, conversationSummary } = req.body;
-  console.log('[Leads] Create:', req.body);
+  let { customerName, phone, location, propertyType, configuration, budget, purpose, timeline, conversationSummary } = req.body;
+  // Sanitize inputs
+  if (customerName) customerName = sanitize(customerName);
+  if (location) location = sanitize(location);
+  if (propertyType) propertyType = sanitize(propertyType);
+  if (configuration) configuration = sanitize(configuration);
+  if (budget) budget = sanitize(budget);
+  if (purpose) purpose = sanitize(purpose);
+  if (timeline) timeline = sanitize(timeline);
+  if (conversationSummary) conversationSummary = sanitize(conversationSummary);
+  if (phone) phone = sanitizePhone(phone);
+  console.log('[Leads] Create (sanitized):', { customerName, phone });
   if (!customerName || !customerName.trim()) {
     return res.status(400).json({ success: false, message: 'Validation failed', error: 'customerName is required', data: { customerName: 'Customer name is required' } });
   }

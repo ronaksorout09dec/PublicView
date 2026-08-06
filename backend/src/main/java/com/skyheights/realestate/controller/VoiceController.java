@@ -14,7 +14,6 @@ import com.skyheights.realestate.dto.ApiResponse;
 import com.skyheights.realestate.dto.ChatRequest;
 import com.skyheights.realestate.dto.ChatResponse;
 import com.skyheights.realestate.service.AIService;
-import com.skyheights.realestate.service.PromptService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 public class VoiceController {
 
     private final AIService aiService;
-    private final PromptService promptService;
 
     @PostMapping("/chat")
     public ResponseEntity<ApiResponse<ChatResponse>> chat(@RequestBody ChatRequest request) {

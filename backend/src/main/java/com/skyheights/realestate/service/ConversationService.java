@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.skyheights.realestate.ai.ConversationManager;
 import com.skyheights.realestate.ai.ConversationMessage;
 import com.skyheights.realestate.ai.ConversationSession;
 
@@ -17,14 +18,11 @@ public class ConversationService {
 
     private final AIService aiService;
     private final PromptService promptService;
+    private final ConversationManager conversationManager;
 
     public ConversationSession startConversation() {
         String prompt = promptService.generateSystemPrompt();
-        ConversationSession session = ConversationSession.createNew(prompt);
-        // Store via AIService
-        aiService.getOrCreateSession(session.getSessionId());
-        // Actually we need to put it in map - AIService create already does, so we reuse
-        // For explicit control, we will use AIService's method, but we need to ensure greeting
+        ConversationSession session = conversationManager.createSession(prompt);
         log.info("Started new conversation: {}", session.getSessionId());
         return session;
     }

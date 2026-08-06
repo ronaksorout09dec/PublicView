@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.skyheights.realestate.config.OllamaConfig;
 import com.skyheights.realestate.dto.ApiResponse;
 import com.skyheights.realestate.service.AIService;
 
@@ -24,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 public class HealthController {
 
     private final AIService aiService;
+    private final OllamaConfig ollamaConfig;
 
     @GetMapping("/health")
     public ResponseEntity<ApiResponse<Map<String, Object>>> health() {
@@ -47,7 +49,7 @@ public class HealthController {
         health.put("ollama", Map.of(
                 "status", ollamaUp ? "UP" : "DOWN",
                 "model", model,
-                "baseUrl", "http://localhost:11434"
+                "baseUrl", ollamaConfig.getBaseUrl()
         ));
 
         // Database is UP if we reached this point (Spring would fail otherwise)

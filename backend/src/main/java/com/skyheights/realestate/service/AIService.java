@@ -1,13 +1,11 @@
 package com.skyheights.realestate.service;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.skyheights.realestate.ai.AIProvider;
+import com.skyheights.realestate.ai.ConversationManager;
 import com.skyheights.realestate.ai.ConversationMessage;
 import com.skyheights.realestate.ai.ConversationSession;
 import com.skyheights.realestate.dto.LeadResponse;
@@ -20,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
  * AIService - Only service allowed to call AIProvider.
  * Controllers must never communicate directly with Ollama.
  * Preserves conversation history, handles language detection, lead extraction.
+ * Delegates session memory to ConversationManager.
  */
 @Service
 @RequiredArgsConstructor
@@ -29,9 +28,7 @@ public class AIService {
     private final AIProvider aiProvider;
     private final PromptService promptService;
     private final ObjectMapper objectMapper;
-
-    // In-memory session store - for production use Redis/DB
-    private final Map<String, ConversationSession> sessions = new ConcurrentHashMap<>();
+    private final ConversationManager conversationManager;
 
     public String chat(String sessionId, String userMessage) {
         ConversationSession session = getOrCreateSession(sessionId);
@@ -47,23 +44,24 @@ public class AIService {
         } catch (Exception e) {
             log.error("AI chat failed for session {}: {}", sessionId, e.getMessage(), e);
             // Graceful fallback - rule-based response
-            return getFallbackResponse(userMessage, session);
+            String fallback = getFallbackResponse(userMessage, session);
+            session.addAssistantMessage(fallback);
+            return fallback;
         }
     }
 
     public ConversationSession getOrCreateSession(String sessionId) {
-        if (sessionId != null && sessions.containsKey(sessionId)) {
-            return sessions.get(sessionId);
-        }
         String prompt = promptService.generateSystemPrompt();
-        ConversationSession session = ConversationSession.createNew(prompt);
-        sessions.put(session.getSessionId(), session);
-        log.info("Created new conversation session: {}", session.getSessionId());
+        ConversationSession session = conversationManager.getOrCreate(sessionId, prompt);
+        // Ensure systemPrompt is set if newly created
+        if (session.getSystemPrompt() == null || session.getSystemPrompt().isBlank()) {
+            session.setSystemPrompt(prompt);
+        }
         return session;
     }
 
     public ConversationSession getSession(String sessionId) {
-        return sessions.get(sessionId);
+        return conversationManager.getSession(sessionId);
     }
 
     public String generateLeadSummary(ConversationSession session) {
@@ -109,7 +107,7 @@ public class AIService {
         for (ConversationMessage m : session.getMessages()) {
             conv.append(m.getRole()).append(": ").append(m.getContent()).append("; ");
         }
-        Map<String, String> fallback = Map.of(
+        java.util.Map<String, String> fallback = java.util.Map.of(
                 "customerName", "Unknown",
                 "phone", "",
                 "location", "Sector 150 Noida",
@@ -159,7 +157,7 @@ public class AIService {
     }
 
     public void clearSession(String sessionId) {
-        sessions.remove(sessionId);
+        conversationManager.clearSession(sessionId);
         log.info("Cleared session {}", sessionId);
     }
 
